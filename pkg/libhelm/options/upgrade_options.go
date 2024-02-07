@@ -1,6 +1,6 @@
 package options
 
-type InstallOptions struct {
+type UpgradeOptions struct {
 	Name                    string
 	Chart                   string
 	Namespace               string

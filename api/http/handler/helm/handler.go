@@ -50,7 +50,7 @@ func NewHandler(bouncer security.BouncerService, dataStore dataservices.DataStor
 
 	// `helm install [NAME] [CHART] flags`
 	h.Handle("/{id}/kubernetes/helm",
-		bouncer.AuthenticatedAccess(httperror.LoggerHandler(h.helmInstall))).Methods(http.MethodPost)
+		bouncer.AuthenticatedAccess(httperror.LoggerHandler(h.helmUpgrade))).Methods(http.MethodPost)
 
 	// Deprecated
 	h.Handle("/{id}/kubernetes/helm/repositories",
