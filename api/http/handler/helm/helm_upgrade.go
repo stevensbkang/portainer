@@ -20,7 +20,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type installChartPayload struct {
+type upgradeChartPayload struct {
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
 	Chart     string `json:"chart"`
@@ -33,8 +33,8 @@ var errChartNameInvalid = errors.New("invalid chart name. " +
 	" and must start and end with an alphanumeric character",
 )
 
-// @id HelmInstall
-// @summary Install Helm Chart
+// @id HelmUpgrade
+// @summary Upgrade Helm Chart
 // @description
 // @description **Access policy**: authenticated
 // @tags helm
@@ -43,29 +43,29 @@ var errChartNameInvalid = errors.New("invalid chart name. " +
 // @accept json
 // @produce json
 // @param id path int true "Environment(Endpoint) identifier"
-// @param payload body installChartPayload true "Chart details"
+// @param payload body upgradeChartPayload true "Chart details"
 // @success 201 {object} release.Release "Created"
 // @failure 401 "Unauthorized"
 // @failure 404 "Environment(Endpoint) or ServiceAccount not found"
 // @failure 500 "Server error"
 // @router /endpoints/{id}/kubernetes/helm [post]
-func (handler *Handler) helmInstall(w http.ResponseWriter, r *http.Request) *httperror.HandlerError {
-	var payload installChartPayload
+func (handler *Handler) helmUpgrade(w http.ResponseWriter, r *http.Request) *httperror.HandlerError {
+	var payload upgradeChartPayload
 	err := request.DecodeAndValidateJSONPayload(r, &payload)
 	if err != nil {
-		return httperror.BadRequest("Invalid Helm install payload", err)
+		return httperror.BadRequest("Invalid Helm upgrade payload", err)
 	}
 
-	release, err := handler.installChart(r, payload)
+	release, err := handler.upgradeChart(r, payload)
 	if err != nil {
-		return httperror.InternalServerError("Unable to install a chart", err)
+		return httperror.InternalServerError("Unable to upgrade a chart", err)
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	return response.JSON(w, release)
 }
 
-func (p *installChartPayload) Validate(_ *http.Request) error {
+func (p *upgradeChartPayload) Validate(_ *http.Request) error {
 	var required []string
 	if p.Repo == "" {
 		required = append(required, "repo")
@@ -90,12 +90,12 @@ func (p *installChartPayload) Validate(_ *http.Request) error {
 	return nil
 }
 
-func (handler *Handler) installChart(r *http.Request, p installChartPayload) (*release.Release, error) {
+func (handler *Handler) upgradeChart(r *http.Request, p upgradeChartPayload) (*release.Release, error) {
 	clusterAccess, httperr := handler.getHelmClusterAccess(r)
 	if httperr != nil {
 		return nil, httperr.Err
 	}
-	installOpts := options.InstallOptions{
+	upgradeOpts := options.UpgradeOptions{
 		Name:      p.Name,
 		Chart:     p.Chart,
 		Namespace: p.Namespace,
@@ -122,20 +122,20 @@ func (handler *Handler) installChart(r *http.Request, p installChartPayload) (*r
 		if err != nil {
 			return nil, err
 		}
-		installOpts.ValuesFile = file.Name()
+		upgradeOpts.ValuesFile = file.Name()
 	}
 
-	release, err := handler.helmPackageManager.Install(installOpts)
+	release, err := handler.helmPackageManager.Upgrade(upgradeOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	manifest, err := handler.applyPortainerLabelsToHelmAppManifest(r, installOpts, release.Manifest)
+	manifest, err := handler.applyPortainerLabelsToHelmAppManifest(r, upgradeOpts, release.Manifest)
 	if err != nil {
 		return nil, err
 	}
 
-	err = handler.updateHelmAppManifest(r, manifest, installOpts.Namespace)
+	err = handler.updateHelmAppManifest(r, manifest, upgradeOpts.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (handler *Handler) installChart(r *http.Request, p installChartPayload) (*r
 // applyPortainerLabelsToHelmAppManifest will patch all the resources deployed in the helm release manifest
 // with portainer specific labels. This is to mark the resources as managed by portainer - hence the helm apps
 // wont appear external in the portainer UI.
-func (handler *Handler) applyPortainerLabelsToHelmAppManifest(r *http.Request, installOpts options.InstallOptions, manifest string) ([]byte, error) {
+func (handler *Handler) applyPortainerLabelsToHelmAppManifest(r *http.Request, upgradeOpts options.UpgradeOptions, manifest string) ([]byte, error) {
 	// Patch helm release by adding with portainer labels to all deployed resources
 	tokenData, err := security.RetrieveTokenData(r)
 	if err != nil {
@@ -157,7 +157,7 @@ func (handler *Handler) applyPortainerLabelsToHelmAppManifest(r *http.Request, i
 		return nil, errors.Wrap(err, "unable to load user information from the database")
 	}
 
-	appLabels := kubernetes.GetHelmAppLabels(installOpts.Name, user.Username)
+	appLabels := kubernetes.GetHelmAppLabels(upgradeOpts.Name, user.Username)
 	labeledManifest, err := kubernetes.AddAppLabels([]byte(manifest), appLabels)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to label helm release manifest")

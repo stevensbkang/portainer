@@ -42,8 +42,8 @@ func Test_helmDelete(t *testing.T) {
 	is.NotNil(h, "Handler should not fail")
 
 	// Install a single chart directly, to be deleted by the handler
-	options := options.InstallOptions{Name: "nginx-1", Chart: "nginx", Namespace: "default"}
-	h.helmPackageManager.Install(options)
+	options := options.UpgradeOptions{Name: "nginx-1", Chart: "nginx", Namespace: "default"}
+	h.helmPackageManager.Upgrade(options)
 
 	t.Run("helmDelete succeeds with admin user", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/1/kubernetes/helm/%s", options.Name), nil)

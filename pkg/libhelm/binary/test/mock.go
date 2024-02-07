@@ -38,13 +38,13 @@ func NewMockHelmBinaryPackageManager(binaryPath string) libhelm.HelmPackageManag
 
 var mockCharts = []release.ReleaseElement{}
 
-func newMockReleaseElement(installOpts options.InstallOptions) *release.ReleaseElement {
+func newMockReleaseElement(upgradeOpts options.UpgradeOptions) *release.ReleaseElement {
 	return &release.ReleaseElement{
-		Name:       installOpts.Name,
-		Namespace:  installOpts.Namespace,
+		Name:       upgradeOpts.Name,
+		Namespace:  upgradeOpts.Namespace,
 		Updated:    "date/time",
 		Status:     "deployed",
-		Chart:      installOpts.Chart,
+		Chart:      upgradeOpts.Chart,
 		AppVersion: "1.2.3",
 	}
 }
@@ -56,14 +56,14 @@ func newMockRelease(re *release.ReleaseElement) *release.Release {
 	}
 }
 
-// Install a helm chart (not thread safe)
-func (hpm *helmMockPackageManager) Install(installOpts options.InstallOptions) (*release.Release, error) {
+// Upgrade a helm chart (not thread safe)
+func (hpm *helmMockPackageManager) Upgrade(upgradeOpts options.UpgradeOptions) (*release.Release, error) {
 
-	releaseElement := newMockReleaseElement(installOpts)
+	releaseElement := newMockReleaseElement(upgradeOpts)
 
 	// Enforce only one chart with the same name per namespace
 	for i, rel := range mockCharts {
-		if rel.Name == installOpts.Name && rel.Namespace == installOpts.Namespace {
+		if rel.Name == upgradeOpts.Name && rel.Namespace == upgradeOpts.Namespace {
 			mockCharts[i] = *releaseElement
 			return newMockRelease(releaseElement), nil
 		}

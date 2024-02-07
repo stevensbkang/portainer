@@ -54,13 +54,13 @@ func Test_Install(t *testing.T) {
 
 	t.Run("successfully installs nginx chart with name test-nginx", func(t *testing.T) {
 		// helm install test-nginx --repo https://charts.bitnami.com/bitnami nginx
-		installOpts := options.InstallOptions{
+		upgradeOpts := options.UpgradeOptions{
 			Name:  "test-nginx",
 			Chart: "nginx",
 			Repo:  "https://charts.bitnami.com/bitnami",
 		}
 
-		release, err := hbpm.Install(installOpts)
+		release, err := hbpm.Upgrade(upgradeOpts)
 		defer hbpm.run("uninstall", []string{"test-nginx"}, nil)
 
 		is.NoError(err, "should successfully install release", release)
@@ -68,11 +68,11 @@ func Test_Install(t *testing.T) {
 
 	t.Run("successfully installs nginx chart with generated name", func(t *testing.T) {
 		// helm install --generate-name --repo https://charts.bitnami.com/bitnami nginx
-		installOpts := options.InstallOptions{
+		upgradeOpts := options.UpgradeOptions{
 			Chart: "nginx",
 			Repo:  "https://charts.bitnami.com/bitnami",
 		}
-		release, err := hbpm.Install(installOpts)
+		release, err := hbpm.Upgrade(upgradeOpts)
 		defer hbpm.run("uninstall", []string{release.Name}, nil)
 
 		is.NoError(err, "should successfully install release", release)
@@ -85,13 +85,13 @@ func Test_Install(t *testing.T) {
 
 		defer os.Remove(values)
 
-		installOpts := options.InstallOptions{
+		upgradeOpts := options.UpgradeOptions{
 			Name:       "test-nginx-2",
 			Chart:      "nginx",
 			Repo:       "https://charts.bitnami.com/bitnami",
 			ValuesFile: values,
 		}
-		release, err := hbpm.Install(installOpts)
+		release, err := hbpm.Upgrade(upgradeOpts)
 		defer hbpm.run("uninstall", []string{"test-nginx-2"}, nil)
 
 		is.NoError(err, "should successfully install release", release)
@@ -99,13 +99,13 @@ func Test_Install(t *testing.T) {
 
 	t.Run("successfully installs portainer chart with name portainer-test", func(t *testing.T) {
 		// helm install portainer-test portainer --repo https://portainer.github.io/k8s/
-		installOpts := options.InstallOptions{
+		upgradeOpts := options.UpgradeOptions{
 			Name:  "portainer-test",
 			Chart: "portainer",
 			Repo:  "https://portainer.github.io/k8s/",
 		}
-		release, err := hbpm.Install(installOpts)
-		defer hbpm.run("uninstall", []string{installOpts.Name}, nil)
+		release, err := hbpm.Upgrade(upgradeOpts)
+		defer hbpm.run("uninstall", []string{upgradeOpts.Name}, nil)
 
 		is.NoError(err, "should successfully install release", release)
 	})
